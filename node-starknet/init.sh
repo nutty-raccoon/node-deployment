@@ -36,7 +36,7 @@ docker compose up --force-recreate -d nginx
 
 sleep 3
 
-docker-compose run --rm certbot certonly \
+docker compose run --rm certbot certonly \
     --webroot \
     --webroot-path /var/www/certbot \
     --email ${EMAIL} \
@@ -44,7 +44,7 @@ docker-compose run --rm certbot certonly \
     --no-eff-email \
     -d ${DOMAIN_NAME}
 
-docker-compose down nginx
+docker compose down nginx
 
 export COMPOSE_FILE="$SCRIPT_DIR/node-starknet-sepolia.yaml"
 
@@ -53,4 +53,4 @@ PG_URL="${PG_URL}"
 STARKNET_CASHIER_ADDRESS="${STARKNET_CASHIER_ADDRESS}"
 STARKNET_CASHIER_PRIVATE_KEY="${STARKNET_CASHIER_PRIVATE_KEY}"
 
-docker-compose up -d
+docker compose up -d

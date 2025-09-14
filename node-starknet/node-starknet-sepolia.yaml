@@ -77,6 +77,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    depends_on:
+      node:
+        condition: service_healthy
     volumes:
       - ./node-starknet-sepolia.nginx.conf:/etc/nginx/templates/default.conf.template
       - ./certbot/conf:/etc/letsencrypt
