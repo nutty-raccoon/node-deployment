@@ -1,0 +1,82 @@
+services:
+  web-app:
+    image: "web-app"
+    build:
+      context: ..
+      dockerfile: ./dockerfiles/web-app.Dockerfile
+    volumes:
+      - ./certs:/certs
+    restart: always
+    environment:
+      - PORT=80
+
+  price-provider:
+    build:
+      context: ..
+      dockerfile: ./dockerfiles/price-provider.Dockerfile
+    restart: always
+    environment:
+      COIN_PRO_GECKO_API_KEY: ${COIN_PRO_GECKO_API_KEY}
+      COIN_DEMO_GECKO_API_KEY: ${COIN_DEMO_GECKO_API_KEY}
+      PORT: 80
+      HOST: ""
+      CURRENCIES: >
+       ["usd", "eur"]
+      # CAREFUL: use lowerstring hex values otherwise it will crash
+      TOKENS: >
+       [
+          {
+            "symbol": "eth",
+            "chain": "ethereum",
+            "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+          },
+          {
+            "symbol": "strk",
+            "chain": "ethereum",
+            "address": "0xca14007eff0db1f8135f4c25b34de49ab0d42766"
+          },
+          {
+            "symbol": "usdc",
+            "chain": "ethereum",
+            "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+          },
+          {
+            "symbol": "usdt",
+            "chain": "ethereum",
+            "address": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+          },
+          {
+            "symbol": "wbtc",
+            "chain": "ethereum",
+            "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+          }
+        ]
+
+  nginx:
+    image: nginx:1.29-alpine
+    environment:
+      - WEB_APP_DOMAIN_NAME=${WEB_APP_DOMAIN_NAME}
+      - PRICE_PROVIDER_DOMAIN_NAME=${PRICE_PROVIDER_DOMAIN_NAME}
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      web-app:
+        condition: service_healthy
+      price-provider:
+        condition: service_healthy
+    volumes:
+      - ./web-app-and-price-provider.nginx.conf:/etc/nginx/templates/default.conf.template
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ../nginx-entrypoint.sh:/entrypoint.sh
+    command: "/bin/sh /entrypoint.sh"
+
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+

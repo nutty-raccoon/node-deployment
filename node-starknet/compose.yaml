@@ -69,7 +69,6 @@ services:
       timeout: 2s
       retries: 3
 
-# nginx
   nginx:
     image: nginx:1.29-alpine
     environment:
@@ -84,7 +83,7 @@ services:
       - ./node-starknet-sepolia.nginx.conf:/etc/nginx/templates/default.conf.template
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-      - ./nginx-entrypoint.sh:/entrypoint.sh
+      - ../nginx-entrypoint.sh:/entrypoint.sh
     command: "/bin/sh /entrypoint.sh"
 
 

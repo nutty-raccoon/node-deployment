@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e 
 
 if ! [ -x "$(command -v docker compose)" ]; then
@@ -6,17 +7,33 @@ if ! [ -x "$(command -v docker compose)" ]; then
   exit 1
 fi
 
-DOMAIN_NAME="${DOMAIN_NAME}"
+CERT_NAME="${CERT_NAME}"
+DOMAIN_NAMES="${DOMAIN_NAMES}"
 EMAIL="${EMAIL}"
+
+if [ -z "${CERT_NAME}" ]; then
+  echo 'Error: DOMAIN_NAMES environment variable is not set.' >&2
+  exit 1
+fi
+
+if [ -z "${DOMAIN_NAMES}" ]; then
+  echo 'Error: DOMAIN_NAMES environment variable is not set.' >&2
+  exit 1
+fi
+
+if [ -z "${EMAIL}" ]; then
+  echo 'Error: EMAIL environment variable is not set.' >&2
+  exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-export COMPOSE_FILE="$SCRIPT_DIR/lets-encrypt-setup/lets-encrypt-setup.yaml"
+export COMPOSE_FILE="$SCRIPT_DIR/compose.yaml"
 
 host_certbot_path="$SCRIPT_DIR/certbot"
 
 if [ -d "$host_certbot_path" ]; then
-  read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision
+  read -p "Existing data found for certificates. Continue and replace existing certificate? (y/N) " decision
   if [ "$decision" != "Y" ] && [ "$decision" != "y" ]; then
     exit
   fi
@@ -30,8 +47,16 @@ if [ ! -e "$host_certbot_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$host_ce
   echo
 fi
 
+# Convert comma-separated domains to array and build -d arguments
+IFS=',' read -ra DOMAINS <<< "$DOMAIN_NAMES"
+DOMAIN_ARGS=""
+for domain in "${DOMAINS[@]}"; do
+  # Trim whitespace from domain name
+  domain=$(echo "$domain" | xargs)
+  DOMAIN_ARGS="$DOMAIN_ARGS -d $domain"
+done
 
-echo "Getting certificate for ${DOMAIN_NAME}..."
+echo "Getting certificate for domains: ${DOMAIN_NAMES}..."
 docker compose up --force-recreate -d nginx
 
 sleep 3
@@ -42,15 +67,7 @@ docker compose run --rm certbot certonly \
     --email ${EMAIL} \
     --agree-tos \
     --no-eff-email \
-    -d ${DOMAIN_NAME}
+    --cert-name ${CERT_NAME} \
+    ${DOMAIN_ARGS}
 
 docker compose down nginx
-
-export COMPOSE_FILE="$SCRIPT_DIR/node-starknet-sepolia.yaml"
-
-ROOT_KEY="${ROOT_KEY}"
-PG_URL="${PG_URL}"
-STARKNET_CASHIER_ADDRESS="${STARKNET_CASHIER_ADDRESS}"
-STARKNET_CASHIER_PRIVATE_KEY="${STARKNET_CASHIER_PRIVATE_KEY}"
-
-docker compose up -d
