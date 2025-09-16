@@ -1,19 +1,12 @@
 services:
   web-app:
-    image: "web-app"
-    build:
-      context: ..
-      dockerfile: ./dockerfiles/web-app.Dockerfile
-    volumes:
-      - ./certs:/certs
+    image: "ghcr.io/nutty-raccoon/paynet-web-app:${WEB_APP_VERSION-latest}"
     restart: always
     environment:
       - PORT=80
 
   price-provider:
-    build:
-      context: ..
-      dockerfile: ./dockerfiles/price-provider.Dockerfile
+    image: "ghcr.io/nutty-raccoon/paynet-price-provider:${PRICE_PROVIDER_VERSION-latest}"
     restart: always
     environment:
       COIN_PRO_GECKO_API_KEY: ${COIN_PRO_GECKO_API_KEY}
@@ -57,6 +50,7 @@ services:
     environment:
       - WEB_APP_DOMAIN_NAME=${WEB_APP_DOMAIN_NAME}
       - PRICE_PROVIDER_DOMAIN_NAME=${PRICE_PROVIDER_DOMAIN_NAME}
+      - CERT_NAME=mobile-infra
     ports:
       - "80:80"
       - "443:443"
