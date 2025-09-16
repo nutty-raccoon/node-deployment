@@ -47,8 +47,8 @@ if [ ! -e "$host_certbot_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$host_ce
   echo
 fi
 
-# Convert comma-separated domains to array and build -d arguments
-IFS=',' read -ra DOMAINS <<< "$DOMAIN_NAMES"
+# Convert space-separated domains to array and build -d arguments
+IFS=' ' read -ra DOMAINS <<< "$DOMAIN_NAMES"
 DOMAIN_ARGS=""
 for domain in "${DOMAINS[@]}"; do
   # Trim whitespace from domain name
